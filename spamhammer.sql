@@ -23,6 +23,11 @@
 \timing on
 \set ON_ERROR_STOP on
 BEGIN;
+
+SET client_min_messages = NOTICE;
+
+DO $$ BEGIN RAISE NOTICE '% Dropping the constraint and recreating the function', NOW(); END; $$;
+
 -- Did I mention that you should always drop a constraint before modifying a
 -- user-defined function that it references? I think I did! If you don't believe
 -- me, go back and read that giant warning paragraph above that you skipped
@@ -70,6 +75,8 @@ BEGIN
 $$
 LANGUAGE plpgsql;
 COMMIT;
+
+DO $$ BEGIN RAISE NOTICE '% Running unit tests', NOW(); END; $$;
 
 -- See if our constraint works as expected, identifying spam but not matching benign toots.
 DO $$
@@ -132,6 +139,8 @@ BEGIN
 END;
 $$;
 
+DO $$ BEGIN RAISE NOTICE '% Looking for existing abusive statuses', NOW(); END; $$;
+
 -- See if any current rows are abusive. If so, this gives you a list of status
 -- IDs to investigate. You'll need to delete all of them before you can apply
 -- the constraint in the next step.
@@ -150,6 +159,8 @@ BEGIN
     'Matching IDs: ' || ARRAY_TO_STRING(ids, ',');
 END;
 $$;
+
+DO $$ BEGIN RAISE NOTICE '% Adding the constraint', NOW(); END; $$;
 
 BEGIN;
 -- Now tell PostgreSQL never to insert values where that function returns
