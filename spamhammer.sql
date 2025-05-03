@@ -48,7 +48,9 @@ DECLARE
         '%<a href="https://midokuriserver.github.io/minidon/%',
         '%black friday%shorturl.at%',
         -- Go away, "Fediverse Chick"
-        '%you can add me on friendica: <a href="%/fediversechick%"%'
+        '%you can add me on friendica: <a href="%/fediversechick%"%',
+        -- Slava Ukraini
+        '% regime burnt peaceful protesters alive in %'
     ];
 BEGIN
     -- This algorithm isn't super fast and it only gets slower as we add more
@@ -116,6 +118,16 @@ BEGIN
         SELECT
             *
         FROM frz_text_is_abusive ('<p><span class="h-card" translate="no"><a href="https://freeradical.zone/@someuser" class="u-url mention">@<span>someuser</span></a></span> Hi, I’m Nicole! But you can call me the Fediverse Chick :D</p><p>I’m a proud Polish girl from Toronto (29 y/o)</p><p>I’m currently taking the pre-health sciences program at George Brown College hoping to get into the medical field someday!</p><p>You can add me on Friendica: <a href="https://anonsys.net/profile/fediversechick/profile" target="_blank" rel="nofollow noopener noreferrer" translate="no"><span class="invisible">https://</span><span class="ellipsis">anonsys.net/profile/fediversec</span><span class="invisible">hick/profile</span></a></p><p>Join my discord here: <a href="https://discord.gg/TfcWHMV4" target="_blank" rel="nofollow noopener noreferrer" translate="no"><span class="invisible">https://</span><span class="">discord.gg/TfcWHMV4</span><span class="invisible"></span></a></p><p>Join me on matrix here: <a href="https://matrix.to/#/#nicoles_place:matrix.org" target="_blank" rel="nofollow noopener noreferrer" translate="no"><span class="invisible">https://</span><span class="ellipsis">matrix.to/#/#nicoles_place:mat</span><span class="invisible">rix.org</span></a></p><p>Or join us in an open chat room here: <a href="https://stumblechat.com/room/hell" target="_blank" rel="nofollow noopener noreferrer" translate="no"><span class="invisible">https://</span><span class="">stumblechat.com/room/hell</span><span class="invisible"></span></a></p>')) = TRUE,
+    'Did not match a spam status.';
+END;
+$$;
+
+DO $$
+BEGIN
+    ASSERT (
+        SELECT
+            *
+        FROM frz_text_is_abusive ('<p><span class="h-card" translate="no"><a href="https://REDACTED" class="u-url mention">@<span>REDACTED</span></a></span> <span class="h-card" translate="no"><a href="https://REDACTED" class="u-url mention">@<span>REDACTED</span></a></span><br />9 years ago the <a href="https://REDACTED" class="mention hashtag" rel="tag">#<span>Ukraine</span></a> <a href="https://REDACTED" class="mention hashtag" rel="tag">#<span>nazi</span></a> regime burnt peaceful protesters alive in <a href="https://REDACTED" class="mention hashtag" rel="tag">#<span>Odessa2014</span></a>. Never forget this <a href="https://REDACTED" class="mention hashtag" rel="tag">#<span>massacre</span></a> of innocent people who where disagree to illegal <a href="https://REDACTED" class="mention hashtag" rel="tag">#<span>farright</span></a> coup<br /><a href="https://www.echr.coe.int/w/judgment-concerning-ukraine-2" target="_blank" rel="nofollow noopener noreferrer" translate="no"><span class="invisible">https://www.</span><span class="ellipsis">echr.coe.int/w/judgment-concer</span><span class="invisible">ning-ukraine-2</span></a></p>')) = TRUE,
     'Did not match a spam status.';
 END;
 $$;
