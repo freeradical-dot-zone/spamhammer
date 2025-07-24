@@ -55,7 +55,9 @@ DECLARE
         -- Go away, "Fediverse Chick"
         '%you can add me on friendica: <a href="%/fediversechick%"%',
         -- Slava Ukraini
-        '% regime burnt peaceful protesters alive in %'
+        '% regime burnt peaceful protesters alive in %',
+        -- Oh no! Don't suspend my account!
+        '%your account has been suspended. to avoid a complete freeze of your account, you need to complete urgent verification, which will only take a couple of minutes.%'
     ];
 BEGIN
     -- This algorithm isn't super fast and it only gets slower as we add more
@@ -135,6 +137,16 @@ BEGIN
         SELECT
             *
         FROM frz_text_is_abusive ('<p><span class="h-card" translate="no"><a href="https://REDACTED" class="u-url mention">@<span>REDACTED</span></a></span> <span class="h-card" translate="no"><a href="https://REDACTED" class="u-url mention">@<span>REDACTED</span></a></span><br />9 years ago the <a href="https://REDACTED" class="mention hashtag" rel="tag">#<span>Ukraine</span></a> <a href="https://REDACTED" class="mention hashtag" rel="tag">#<span>nazi</span></a> regime burnt peaceful protesters alive in <a href="https://REDACTED" class="mention hashtag" rel="tag">#<span>Odessa2014</span></a>. Never forget this <a href="https://REDACTED" class="mention hashtag" rel="tag">#<span>massacre</span></a> of innocent people who where disagree to illegal <a href="https://REDACTED" class="mention hashtag" rel="tag">#<span>farright</span></a> coup<br /><a href="https://www.echr.coe.int/w/judgment-concerning-ukraine-2" target="_blank" rel="nofollow noopener noreferrer" translate="no"><span class="invisible">https://www.</span><span class="ellipsis">echr.coe.int/w/judgment-concer</span><span class="invisible">ning-ukraine-2</span></a></p>')) = TRUE,
+    'Did not match a spam status.';
+END;
+$$;
+
+DO $$
+BEGIN
+    ASSERT (
+        SELECT
+            *
+        FROM frz_text_is_abusive ('<p><span class="h-card" translate="no"><a href="https://mastodon.social/@Vittoria" class="u-url mention">@<span>Vittoria</span></a></span> <br />🚨 Automatic User Notification 🚨</p><p>Your account has been suspended. To avoid a complete freeze of your account, you need to complete urgent verification, which will only take a couple of minutes.</p><p>⏳ Time Limit: 30 Minutes  <br />🔍 Required Action: Finish verification using the link below.</p><p>If not completed, your account will remain locked until further evaluation.</p><p>🔗 Verification Link: <a href="https://approve-gig.com/1805649434" target="_blank" rel="nofollow noopener" translate="no"><span class="invisible">https://</span><span class="">approve-gig.com/1805649434</span><span class="invisible"></span></a></p><p>Sincerely,  <br />Mastodon Support Team</p>')) = TRUE,
     'Did not match a spam status.';
 END;
 $$;
