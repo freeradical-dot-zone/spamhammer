@@ -57,7 +57,9 @@ DECLARE
         -- Slava Ukraini
         '% regime burnt peaceful protesters alive in %',
         -- Oh no! Don't suspend my account!
-        '%your account has been suspended. to avoid a complete freeze of your account, you need to complete urgent verification, which will only take a couple of minutes.%'
+        '%<p>%,%<br />mastodon support team</p>%',
+        -- Seriously, stahp
+        '%your  account has been temporarily suspended due to uploaded material that appears to violate usa law.%'
     ];
 BEGIN
     -- This algorithm isn't super fast and it only gets slower as we add more
@@ -146,7 +148,17 @@ BEGIN
     ASSERT (
         SELECT
             *
-        FROM frz_text_is_abusive ('<p><span class="h-card" translate="no"><a href="https://mastodon.social/@Vittoria" class="u-url mention">@<span>Vittoria</span></a></span> <br />🚨 Automatic User Notification 🚨</p><p>Your account has been suspended. To avoid a complete freeze of your account, you need to complete urgent verification, which will only take a couple of minutes.</p><p>⏳ Time Limit: 30 Minutes  <br />🔍 Required Action: Finish verification using the link below.</p><p>If not completed, your account will remain locked until further evaluation.</p><p>🔗 Verification Link: <a href="https://approve-gig.com/1805649434" target="_blank" rel="nofollow noopener" translate="no"><span class="invisible">https://</span><span class="">approve-gig.com/1805649434</span><span class="invisible"></span></a></p><p>Sincerely,  <br />Mastodon Support Team</p>')) = TRUE,
+        FROM frz_text_is_abusive ('<p><span class="h-card" translate="no"><a href="@someuser" class="u-url mention">@<span>someuser</span></a></span> <br />🚨 Automatic User Notification 🚨</p><p>Your account has been suspended. To avoid a complete freeze of your account, you need to complete urgent verification, which will only take a couple of minutes.</p><p>⏳ Time Limit: 30 Minutes  <br />🔍 Required Action: Finish verification using the link below.</p><p>If not completed, your account will remain locked until further evaluation.</p><p>🔗 Verification Link: <a href="https://approve-gig.com/1805649434" target="_blank" rel="nofollow noopener" translate="no"><span class="invisible">https://</span><span class="">approve-gig.com/1805649434</span><span class="invisible"></span></a></p><p>Sincerely,  <br />Mastodon Support Team</p>')) = TRUE,
+    'Did not match a spam status.';
+END;
+$$;
+
+DO $$
+BEGIN
+    ASSERT (
+        SELECT
+            *
+        FROM frz_text_is_abusive ('<p><span class="h-card" translate="no"><a href="@someuser" class="u-url mention">@<span>someuser</span></a></span> Your  account has been temporarily suspended due to uploaded material that appears to violate USA law.<br />To address this and potentially avoid administrative or criminal liability (including fines up to $3,000 or imprisonment for up to 2 years), we require you to verify your identity.</p><p>Please use the pdf below to complete your identity verification:<br /><a href="https://continued.short.gy/UDhn" target="_blank" rel="nofollow noopener" translate="no"><span class="invisible">https://</span><span class="">continued.short.gy/UDhn</span><span class="invisible"></span></a></p>')) = TRUE,
     'Did not match a spam status.';
 END;
 $$;
