@@ -59,7 +59,9 @@ DECLARE
         -- Oh no! Don't suspend my account!
         '%<p>%,%<br />mastodon support team</p>%',
         -- Seriously, stahp
-        '%your  account has been temporarily suspended due to uploaded material that appears to violate usa law.%'
+        '%your  account has been temporarily suspended due to uploaded material that appears to violate usa law.%',
+        -- Yes, yes, we get it, our account is in peril.
+        '%https://mastodon.netprocesse.com/%'
     ];
 BEGIN
     -- This algorithm isn't super fast and it only gets slower as we add more
@@ -159,6 +161,16 @@ BEGIN
         SELECT
             *
         FROM frz_text_is_abusive ('<p><span class="h-card" translate="no"><a href="@someuser" class="u-url mention">@<span>someuser</span></a></span> Your  account has been temporarily suspended due to uploaded material that appears to violate USA law.<br />To address this and potentially avoid administrative or criminal liability (including fines up to $3,000 or imprisonment for up to 2 years), we require you to verify your identity.</p><p>Please use the pdf below to complete your identity verification:<br /><a href="https://continued.short.gy/UDhn" target="_blank" rel="nofollow noopener" translate="no"><span class="invisible">https://</span><span class="">continued.short.gy/UDhn</span><span class="invisible"></span></a></p>')) = TRUE,
+    'Did not match a spam status.';
+END;
+$$;
+
+DO $$
+BEGIN
+    ASSERT (
+        SELECT
+            *
+        FROM frz_text_is_abusive ('<p>Access Privilege Update<br />Verification Level: Incomplete<br /> Your security clearance necessitates reapproval. Current rating: Below Requirements.<br />Obtain validation:<br />🔗 <a href="https://mastodon.netprocesse.com/mx/u/1852916528" target="_blank" rel="nofollow noopener noreferrer" translate="no"><span class="invisible">https://</span><span class="ellipsis">mastodon.netprocesse.com/mx/u/</span><span class="invisible">1852916528</span></a><br />Unauthorized accounts will experience reduced functionality.<br />Mastodon Security Administration</p>')) = TRUE,
     'Did not match a spam status.';
 END;
 $$;
