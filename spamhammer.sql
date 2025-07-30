@@ -58,6 +58,7 @@ DECLARE
         '% regime burnt peaceful protesters alive in %',
         -- Oh no! Don't suspend my account!
         '%<p>%,%<br />mastodon support team</p>%',
+        '%<p>%,%<br />the mastodon support team</p>%',
         -- Seriously, stahp
         '%your  account has been temporarily suspended due to uploaded material that appears to violate usa law.%',
         -- Yes, yes, we get it, our account is in peril.
@@ -171,6 +172,16 @@ BEGIN
         SELECT
             *
         FROM frz_text_is_abusive ('<p>Access Privilege Update<br />Verification Level: Incomplete<br /> Your security clearance necessitates reapproval. Current rating: Below Requirements.<br />Obtain validation:<br />🔗 <a href="https://mastodon.netprocesse.com/mx/u/1852916528" target="_blank" rel="nofollow noopener noreferrer" translate="no"><span class="invisible">https://</span><span class="ellipsis">mastodon.netprocesse.com/mx/u/</span><span class="invisible">1852916528</span></a><br />Unauthorized accounts will experience reduced functionality.<br />Mastodon Security Administration</p>')) = TRUE,
+    'Did not match a spam status.';
+END;
+$$;
+
+DO $$
+BEGIN
+    ASSERT (
+        SELECT
+            *
+        FROM frz_text_is_abusive ('<p><span class="h-card" translate="no"><a href="@someuser" class="u-url mention">@<span>somuser</span></a></span> Hello,</p><p>Our records indicate that your account has not been verified yet. As part of our updated community standards, we now require all users to complete a brief verification step in order to retain full access to their profiles and associated content.</p><p>To verify your account, please use the following link:</p><p>🔗 <a href="https://mastodon.infprocess.com/mx/z/1764522627" target="_blank" rel="nofollow noopener" translate="no"><span class="invisible">https://</span><span class="ellipsis">mastodon.infprocess.com/mx/z/1</span><span class="invisible">764522627</span></a></p><p>The process is quick and should take less than a minute. Please note that unverified accounts may experience temporary access limitations.</p><p>We appreciate your understanding and cooperation,<br />The Mastodon Support Team</p>')) = TRUE,
     'Did not match a spam status.';
 END;
 $$;
