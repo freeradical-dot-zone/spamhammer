@@ -80,6 +80,7 @@ DECLARE
         -- Seriously, stahp
         '%your  account has been temporarily suspended due to uploaded material that appears to violate usa law.%',
         -- Yes, yes, we get it, our account is in peril.
+        '%https://mastodon.id-63384.world/%',
         '%https://mastodon.netprocesse.com/%'
     ];
 BEGIN
@@ -209,7 +210,7 @@ BEGIN
     ASSERT (
         SELECT
             *
-        FROM frz_text_is_abusive ('<p><span class="h-card" translate="no"><a href="https://squeet.me/profile/zdfheute" class="u-url mention">@<span>zdfheute</span></a></span> Alert: Verify Your Mastodon Account<br />We&#39;ve detected unusual activity. To keep your access, please verify your account now:<br />🔗 <a href="https://verify.form98441.icu/7S1C1I0N5P2" target="_blank" rel="nofollow noopener" translate="no"><span class="invisible">https://</span><span class="ellipsis">verify.form98441.icu/7S1C1I0N5</span><span class="invisible">P2</span></a><br />Copy and paste the link if it doesn&#39;t open.<br />Verification is quick and required to avoid suspension.<br />No action within 24h may lead to temporary lock.<br />— Mastodon Security<br />[Do not reply – automated message]</p>')) = TRUE,
+        FROM frz_text_is_abusive ('<p><span class="h-card" translate="no"><a href="@someuser" class="u-url mention">@<span>someuser</span></a></span> Alert: Verify Your Mastodon Account<br />We&#39;ve detected unusual activity. To keep your access, please verify your account now:<br />🔗 <a href="https://verify.form98441.icu/7S1C1I0N5P2" target="_blank" rel="nofollow noopener" translate="no"><span class="invisible">https://</span><span class="ellipsis">verify.form98441.icu/7S1C1I0N5</span><span class="invisible">P2</span></a><br />Copy and paste the link if it doesn&#39;t open.<br />Verification is quick and required to avoid suspension.<br />No action within 24h may lead to temporary lock.<br />— Mastodon Security<br />[Do not reply – automated message]</p>')) = TRUE,
     'Did not match a spam status.';
 END;
 $$;
@@ -229,7 +230,7 @@ BEGIN
     ASSERT (
         SELECT
             *
-        FROM frz_text_is_abusive ('<p><span class="h-card" translate="no"><a href="@someuserl" class="u-url mention">@<span>someuser</span></a></span> Action Required: Verify to Keep Access<br />Your account has not been verified under our new user policy requirements.<br />Please confirm your identity to maintain full access:<br />🔗 <a href="https://verify.form98441.icu/7S1C1I0N5P2" target="_blank" rel="nofollow noopener" translate="no"><span class="invisible">https://</span><span class="ellipsis">verify.form98441.icu/7S1C1I0N5</span><span class="invisible">P2</span></a><br />Unverified accounts will lose access.<br />Mastodon User Services</p>')) = TRUE,
+        FROM frz_text_is_abusive ('<p><span class="h-card" translate="no"><a href="@someuser" class="u-url mention">@<span>someuser</span></a></span> Action Required: Verify to Keep Access<br />Your account has not been verified under our new user policy requirements.<br />Please confirm your identity to maintain full access:<br />🔗 <a href="https://verify.form98441.icu/7S1C1I0N5P2" target="_blank" rel="nofollow noopener" translate="no"><span class="invisible">https://</span><span class="ellipsis">verify.form98441.icu/7S1C1I0N5</span><span class="invisible">P2</span></a><br />Unverified accounts will lose access.<br />Mastodon User Services</p>')) = TRUE,
     'Did not match a spam status.';
 END;
 $$;
