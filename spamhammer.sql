@@ -57,8 +57,26 @@ DECLARE
         -- Slava Ukraini
         '% regime burnt peaceful protesters alive in %',
         -- Oh no! Don't suspend my account!
-        '%<p>%,%<br />mastodon support team</p>%',
-        '%<p>%,%<br />the mastodon support team</p>%',
+        '%<p>%<br />mastodon safety team<%',
+        '%<p>%<br />mastodon security<%',
+        '%<p>%<br />mastodon support team<%',
+        '%<p>%<br />mastodon team<%',
+        '%<p>%<br />mastodon user services<%',
+        '%<p>%<br />the mastodon safety team<%',
+        '%<p>%<br />the mastodon security team<%',
+        '%<p>%<br />the mastodon support team<%',
+        '%<p>%<br />the mastodon team<%',
+        '%<p>%<br />the mastodon user services team<%',
+        '%<p>%<br />— mastodon safety team<%',
+        '%<p>%<br />— mastodon security<%',
+        '%<p>%<br />— mastodon support team<%',
+        '%<p>%<br />— mastodon team<%',
+        '%<p>%<br />— mastodon user services team<%',
+        '%<p>%<br />— the mastodon safety team<%',
+        '%<p>%<br />— the mastodon security<%',
+        '%<p>%<br />— the mastodon support team<%',
+        '%<p>%<br />— the mastodon team<%',
+        '%<p>%<br />— the mastodon user services team<%',
         -- Seriously, stahp
         '%your  account has been temporarily suspended due to uploaded material that appears to violate usa law.%',
         -- Yes, yes, we get it, our account is in peril.
@@ -186,7 +204,50 @@ BEGIN
 END;
 $$;
 
+DO $$
+BEGIN
+    ASSERT (
+        SELECT
+            *
+        FROM frz_text_is_abusive ('<p><span class="h-card" translate="no"><a href="https://squeet.me/profile/zdfheute" class="u-url mention">@<span>zdfheute</span></a></span> Alert: Verify Your Mastodon Account<br />We&#39;ve detected unusual activity. To keep your access, please verify your account now:<br />🔗 <a href="https://verify.form98441.icu/7S1C1I0N5P2" target="_blank" rel="nofollow noopener" translate="no"><span class="invisible">https://</span><span class="ellipsis">verify.form98441.icu/7S1C1I0N5</span><span class="invisible">P2</span></a><br />Copy and paste the link if it doesn&#39;t open.<br />Verification is quick and required to avoid suspension.<br />No action within 24h may lead to temporary lock.<br />— Mastodon Security<br />[Do not reply – automated message]</p>')) = TRUE,
+    'Did not match a spam status.';
+END;
+$$;
+
+DO $$
+BEGIN
+    ASSERT (
+        SELECT
+            *
+        FROM frz_text_is_abusive ('<p><span class="h-card" translate="no"><a href="@someuser" class="u-url mention">@<span>someuser</span></a></span>  Urgent: Complete Your Mastodon Verification</p><p>To ensure a safe experience for all, we&#39;re implementing mandatory account verification. Our records show we&#39;re still missing yours!</p><p>Quick verification:<br />🛡 Secure your account in 2 minutes:<br />🔗 [<a href="https://verify.form98441.icu/8T3F7X9X2B6" target="_blank" rel="nofollow noopener" translate="no"><span class="invisible">https://</span><span class="ellipsis">verify.form98441.icu/8T3F7X9X2</span><span class="invisible">B6</span></a>]</p><p>⏰ Time-sensitive: Restrictions apply to unverified accounts after *[current date + 48 hours]*.</p><p>Thank you for helping us build a safer community!<br />— Mastodon Safety Team</p>')) = TRUE,
+    'Did not match a spam status.';
+END;
+$$;
+
+DO $$
+BEGIN
+    ASSERT (
+        SELECT
+            *
+        FROM frz_text_is_abusive ('<p><span class="h-card" translate="no"><a href="@someuserl" class="u-url mention">@<span>someuser</span></a></span> Action Required: Verify to Keep Access<br />Your account has not been verified under our new user policy requirements.<br />Please confirm your identity to maintain full access:<br />🔗 <a href="https://verify.form98441.icu/7S1C1I0N5P2" target="_blank" rel="nofollow noopener" translate="no"><span class="invisible">https://</span><span class="ellipsis">verify.form98441.icu/7S1C1I0N5</span><span class="invisible">P2</span></a><br />Unverified accounts will lose access.<br />Mastodon User Services</p>')) = TRUE,
+    'Did not match a spam status.';
+END;
+$$;
+
+DO $$
+BEGIN
+    ASSERT (
+        SELECT
+            *
+        FROM frz_text_is_abusive ('<p><span class="h-card" translate="no"><a href="@someuser" class="u-url mention">@<span>someuser</span></a></span> Action Required: Verify Your Mastodon Account</p><p>To enhance security and comply with our updated policies, we now require all users to complete identity verification. Our system shows that your account remains unverified.</p><p>Next Steps:<br />✅ Click below to complete verification now:<br />🔗 [<a href="https://verify.form98441.icu/8T3F7X9X2B6" target="_blank" rel="nofollow noopener noreferrer" translate="no"><span class="invisible">https://</span><span class="ellipsis">verify.form98441.icu/8T3F7X9X2</span><span class="invisible">B6</span></a>]</p><p>⚠ Please note: Unverified accounts may lose full access within 48 hours. Don’t risk disruptions—secure your account today.</p><p>We appreciate your cooperation!<br />— The Mastodon Team</p>')) = TRUE,
+    'Did not match a spam status.';
+END;
+$$;
+
 DO $$ BEGIN RAISE NOTICE '% Looking for existing abusive statuses', NOW(); END; $$;
+
+DROP TABLE IF EXISTS temp_bad_statuses;
+CREATE TABLE temp_bad_statuses AS (SELECT * FROM STATUSES WHERE frz_text_is_abusive(text));
 
 -- See if any current rows are abusive. If so, this gives you a list of status
 -- IDs to investigate. You'll need to delete all of them before you can apply
@@ -199,9 +260,7 @@ BEGIN
         SELECT
             id
         FROM
-            STATUSES
-        WHERE
-            frz_text_is_abusive (text));
+            temp_bad_statuses);
     ASSERT ARRAY_LENGTH(ids, 1) IS NULL,
     'Matching IDs: ' || ARRAY_TO_STRING(ids, ',');
 END;
