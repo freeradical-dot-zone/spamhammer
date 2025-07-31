@@ -26,7 +26,7 @@ BEGIN;
 
 SET client_min_messages = NOTICE;
 
-DO $$ BEGIN RAISE NOTICE '% Dropping the constraint and recreating the function', NOW(); END; $$;
+DO $$ BEGIN RAISE NOTICE '% Dropping the constraint and recreating the function', CLOCK_TIMESTAMP(); END; $$;
 
 -- Did I mention that you should always drop a constraint before modifying a
 -- user-defined function that it references? I think I did! If you don't believe
@@ -101,7 +101,7 @@ $$
 LANGUAGE plpgsql;
 COMMIT;
 
-DO $$ BEGIN RAISE NOTICE '% Running unit tests', NOW(); END; $$;
+DO $$ BEGIN RAISE NOTICE '% Running unit tests', CLOCK_TIMESTAMP(); END; $$;
 
 -- See if our constraint works as expected, identifying spam but not matching benign toots.
 DO $$
@@ -244,35 +244,19 @@ BEGIN
 END;
 $$;
 
-DO $$ BEGIN RAISE NOTICE '% Looking for existing abusive statuses', NOW(); END; $$;
-
-DROP TABLE IF EXISTS temp_bad_statuses;
-CREATE TABLE temp_bad_statuses AS (SELECT * FROM STATUSES WHERE frz_text_is_abusive(text));
-
--- See if any current rows are abusive. If so, this gives you a list of status
--- IDs to investigate. You'll need to delete all of them before you can apply
--- the constraint in the next step.
-DO $$
-DECLARE
-    ids BIGINT[];
-BEGIN
-    ids := ARRAY (
-        SELECT
-            id
-        FROM
-            temp_bad_statuses);
-    ASSERT ARRAY_LENGTH(ids, 1) IS NULL,
-    'Matching IDs: ' || ARRAY_TO_STRING(ids, ',');
-END;
-$$;
-
-DO $$ BEGIN RAISE NOTICE '% Adding the constraint', NOW(); END; $$;
-
 BEGIN;
 -- Now tell PostgreSQL never to insert values where that function returns
 -- true.
+
+DO $$ BEGIN RAISE NOTICE '% Adding the constraint for new statuses', CLOCK_TIMESTAMP(); END; $$;
 ALTER TABLE statuses
-    ADD CONSTRAINT frz_2024_10_10_01 CHECK (NOT frz_text_is_abusive (text));
+    ADD CONSTRAINT frz_2024_10_10_01 CHECK (NOT frz_text_is_abusive (text)) NOT VALID;
+
+DO $$ BEGIN RAISE NOTICE '% Deleting existing abusive statuses', CLOCK_TIMESTAMP(); END; $$;
+DELETE FROM statuses WHERE frz_text_is_abusive(text);
+
+DO $$ BEGIN RAISE NOTICE '% Validating the constrainst against existing statuses', CLOCK_TIMESTAMP(); END; $$;
+ALTER TABLE statuses VALIDATE CONSTRAINT frz_2024_10_10_01;
 COMMIT;
 
 \timing off
