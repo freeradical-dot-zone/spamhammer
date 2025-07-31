@@ -104,146 +104,56 @@ COMMIT;
 
 DO $$ BEGIN RAISE NOTICE '% Running unit tests', CLOCK_TIMESTAMP(); END; $$;
 
--- See if our constraint works as expected, identifying spam but not matching benign toots.
-DO $$
-BEGIN
-    ASSERT (
-        SELECT
-            *
-        FROM frz_text_is_abusive ('hello, world!')) = FALSE,
-    'Matched an innocent status.';
-END;
-$$;
+-- Check that our function does *not* match innocent statuses.
 
 DO $$
+DECLARE
+    ham_string TEXT;
+    sample_ham_strings TEXT ARRAY = ARRAY[
+        'hello, world!',
+        'You can add me on Friendica: @me@friendica'
+    ];
 BEGIN
-    ASSERT (
-        SELECT
-            *
-        FROM frz_text_is_abusive ('You can add me on Friendica: @me@friendica')) = FALSE,
-    'Matched an innocent status.';
+    RAISE NOTICE '% Unit tests for matching non-spammy statuses', CLOCK_TIMESTAMP();
+    FOREACH ham_string IN ARRAY sample_ham_strings LOOP
+        ASSERT (SELECT * FROM frz_text_is_abusive(ham_string)) = FALSE, 'Matched a ham status: ''' || ham_string || '''';
+    END LOOP;
 END;
-$$;
+$$
+LANGUAGE plpgsql;
+
+-- Check that our function *does* match known-bad statuses.
 
 DO $$
+DECLARE
+    spam_string TEXT;
+    sample_spam_strings TEXT ARRAY = ARRAY[
+        -- Midokuri nonsense
+        'i am annoyed by <a href="https://midokuriserver.github.io/minidon/',
+        -- 2024 Black Friday wave
+        'Black Friday Sale :Grab Your $300 Discount on $1,000+ Mattress Purchases – Ending Soon!<br /><a href="https://shorturl.at/iSuCk"',
+        -- Fediverse chick
+        '<p><span class="h-card" translate="no"><a href="https://freeradical.zone/@someuser" class="u-url mention">@<span>someuser</span></a></span> Hi, I’m Nicole! But you can call me the Fediverse Chick :D</p><p>I’m a proud Polish girl from Toronto (29 y/o)</p><p>I’m currently taking the pre-health sciences program at George Brown College hoping to get into the medical field someday!</p><p>You can add me on Friendica: <a href="https://anonsys.net/profile/fediversechick/profile" target="_blank" rel="nofollow noopener noreferrer" translate="no"><span class="invisible">https://</span><span class="ellipsis">anonsys.net/profile/fediversec</span><span class="invisible">hick/profile</span></a></p><p>Join my discord here: <a href="https://discord.gg/TfcWHMV4" target="_blank" rel="nofollow noopener noreferrer" translate="no"><span class="invisible">https://</span><span class="">discord.gg/TfcWHMV4</span><span class="invisible"></span></a></p><p>Join me on matrix here: <a href="https://matrix.to/#/#nicoles_place:matrix.org" target="_blank" rel="nofollow noopener noreferrer" translate="no"><span class="invisible">https://</span><span class="ellipsis">matrix.to/#/#nicoles_place:mat</span><span class="invisible">rix.org</span></a></p><p>Or join us in an open chat room here: <a href="https://stumblechat.com/room/hell" target="_blank" rel="nofollow noopener noreferrer" translate="no"><span class="invisible">https://</span><span class="">stumblechat.com/room/hell</span><span class="invisible"></span></a></p>',
+        -- Anti-Ukraine concern troll
+        '<p><span class="h-card" translate="no"><a href="https://REDACTED" class="u-url mention">@<span>REDACTED</span></a></span> <span class="h-card" translate="no"><a href="https://REDACTED" class="u-url mention">@<span>REDACTED</span></a></span><br />9 years ago the <a href="https://REDACTED" class="mention hashtag" rel="tag">#<span>Ukraine</span></a> <a href="https://REDACTED" class="mention hashtag" rel="tag">#<span>nazi</span></a> regime burnt peaceful protesters alive in <a href="https://REDACTED" class="mention hashtag" rel="tag">#<span>Odessa2014</span></a>. Never forget this <a href="https://REDACTED" class="mention hashtag" rel="tag">#<span>massacre</span></a> of innocent people who where disagree to illegal <a href="https://REDACTED" class="mention hashtag" rel="tag">#<span>farright</span></a> coup<br /><a href="https://www.echr.coe.int/w/judgment-concerning-ukraine-2" target="_blank" rel="nofollow noopener noreferrer" translate="no"><span class="invisible">https://www.</span><span class="ellipsis">echr.coe.int/w/judgment-concer</span><span class="invisible">ning-ukraine-2</span></a></p>',
+        -- Lots of variations of Mastodon support spam
+        '<p><span class="h-card" translate="no"><a href="@someuser" class="u-url mention">@<span>someuser</span></a></span> <br />🚨 Automatic User Notification 🚨</p><p>Your account has been suspended. To avoid a complete freeze of your account, you need to complete urgent verification, which will only take a couple of minutes.</p><p>⏳ Time Limit: 30 Minutes  <br />🔍 Required Action: Finish verification using the link below.</p><p>If not completed, your account will remain locked until further evaluation.</p><p>🔗 Verification Link: <a href="https://approve-gig.com/1805649434" target="_blank" rel="nofollow noopener" translate="no"><span class="invisible">https://</span><span class="">approve-gig.com/1805649434</span><span class="invisible"></span></a></p><p>Sincerely,  <br />Mastodon Support Team</p>',
+        '<p><span class="h-card" translate="no"><a href="@someuser" class="u-url mention">@<span>someuser</span></a></span> Your  account has been temporarily suspended due to uploaded material that appears to violate USA law.<br />To address this and potentially avoid administrative or criminal liability (including fines up to $3,000 or imprisonment for up to 2 years), we require you to verify your identity.</p><p>Please use the pdf below to complete your identity verification:<br /><a href="https://continued.short.gy/UDhn" target="_blank" rel="nofollow noopener" translate="no"><span class="invisible">https://</span><span class="">continued.short.gy/UDhn</span><span class="invisible"></span></a></p>',
+        '<p>Access Privilege Update<br />Verification Level: Incomplete<br /> Your security clearance necessitates reapproval. Current rating: Below Requirements.<br />Obtain validation:<br />🔗 <a href="https://mastodon.netprocesse.com/mx/u/1852916528" target="_blank" rel="nofollow noopener noreferrer" translate="no"><span class="invisible">https://</span><span class="ellipsis">mastodon.netprocesse.com/mx/u/</span><span class="invisible">1852916528</span></a><br />Unauthorized accounts will experience reduced functionality.<br />Mastodon Security Administration</p>',
+        '<p><span class="h-card" translate="no"><a href="@someuser" class="u-url mention">@<span>somuser</span></a></span> Hello,</p><p>Our records indicate that your account has not been verified yet. As part of our updated community standards, we now require all users to complete a brief verification step in order to retain full access to their profiles and associated content.</p><p>To verify your account, please use the following link:</p><p>🔗 <a href="https://mastodon.infprocess.com/mx/z/1764522627" target="_blank" rel="nofollow noopener" translate="no"><span class="invisible">https://</span><span class="ellipsis">mastodon.infprocess.com/mx/z/1</span><span class="invisible">764522627</span></a></p><p>The process is quick and should take less than a minute. Please note that unverified accounts may experience temporary access limitations.</p><p>We appreciate your understanding and cooperation,<br />The Mastodon Support Team</p>',
+        '<p><span class="h-card" translate="no"><a href="@someuser" class="u-url mention">@<span>someuser</span></a></span> Alert: Verify Your Mastodon Account<br />We&#39;ve detected unusual activity. To keep your access, please verify your account now:<br />🔗 <a href="https://verify.form98441.icu/7S1C1I0N5P2" target="_blank" rel="nofollow noopener" translate="no"><span class="invisible">https://</span><span class="ellipsis">verify.form98441.icu/7S1C1I0N5</span><span class="invisible">P2</span></a><br />Copy and paste the link if it doesn&#39;t open.<br />Verification is quick and required to avoid suspension.<br />No action within 24h may lead to temporary lock.<br />— Mastodon Security<br />[Do not reply – automated message]</p>',
+        '<p><span class="h-card" translate="no"><a href="@someuser" class="u-url mention">@<span>someuser</span></a></span>  Urgent: Complete Your Mastodon Verification</p><p>To ensure a safe experience for all, we&#39;re implementing mandatory account verification. Our records show we&#39;re still missing yours!</p><p>Quick verification:<br />🛡 Secure your account in 2 minutes:<br />🔗 [<a href="https://verify.form98441.icu/8T3F7X9X2B6" target="_blank" rel="nofollow noopener" translate="no"><span class="invisible">https://</span><span class="ellipsis">verify.form98441.icu/8T3F7X9X2</span><span class="invisible">B6</span></a>]</p><p>⏰ Time-sensitive: Restrictions apply to unverified accounts after *[current date + 48 hours]*.</p><p>Thank you for helping us build a safer community!<br />— Mastodon Safety Team</p>',
+        '<p><span class="h-card" translate="no"><a href="@someuser" class="u-url mention">@<span>someuser</span></a></span> Action Required: Verify to Keep Access<br />Your account has not been verified under our new user policy requirements.<br />Please confirm your identity to maintain full access:<br />🔗 <a href="https://verify.form98441.icu/7S1C1I0N5P2" target="_blank" rel="nofollow noopener" translate="no"><span class="invisible">https://</span><span class="ellipsis">verify.form98441.icu/7S1C1I0N5</span><span class="invisible">P2</span></a><br />Unverified accounts will lose access.<br />Mastodon User Services</p>',
+        '<p><span class="h-card" translate="no"><a href="@someuser" class="u-url mention">@<span>someuser</span></a></span> Action Required: Verify Your Mastodon Account</p><p>To enhance security and comply with our updated policies, we now require all users to complete identity verification. Our system shows that your account remains unverified.</p><p>Next Steps:<br />✅ Click below to complete verification now:<br />🔗 [<a href="https://verify.form98441.icu/8T3F7X9X2B6" target="_blank" rel="nofollow noopener noreferrer" translate="no"><span class="invisible">https://</span><span class="ellipsis">verify.form98441.icu/8T3F7X9X2</span><span class="invisible">B6</span></a>]</p><p>⚠ Please note: Unverified accounts may lose full access within 48 hours. Don’t risk disruptions—secure your account today.</p><p>We appreciate your cooperation!<br />— The Mastodon Team</p>'
+    ];
 BEGIN
-    ASSERT (
-        SELECT
-            *
-        FROM frz_text_is_abusive ('i am annoyed by <a href="https://midokuriserver.github.io/minidon/')) = TRUE,
-    'Did not match a spam status.';
+    RAISE NOTICE '% Unit tests for matching spammy statuses', CLOCK_TIMESTAMP();
+    FOREACH spam_string IN ARRAY sample_spam_strings LOOP
+        ASSERT (SELECT * FROM frz_text_is_abusive(spam_string)) = TRUE, 'Did not match a spam status: ''' || spam_string || '''';
+    END LOOP;
 END;
-$$;
-
-DO $$
-BEGIN
-    ASSERT (
-        SELECT
-            *
-        FROM frz_text_is_abusive ('Black Friday Sale :Grab Your $300 Discount on $1,000+ Mattress Purchases – Ending Soon!<br /><a href="https://shorturl.at/iSuCk"')) = TRUE,
-    'Did not match a spam status.';
-END;
-$$;
-
-DO $$
-BEGIN
-    ASSERT (
-        SELECT
-            *
-        FROM frz_text_is_abusive ('<p><span class="h-card" translate="no"><a href="https://freeradical.zone/@someuser" class="u-url mention">@<span>someuser</span></a></span> Hi, I’m Nicole! But you can call me the Fediverse Chick :D</p><p>I’m a proud Polish girl from Toronto (29 y/o)</p><p>I’m currently taking the pre-health sciences program at George Brown College hoping to get into the medical field someday!</p><p>You can add me on Friendica: <a href="https://anonsys.net/profile/fediversechick/profile" target="_blank" rel="nofollow noopener noreferrer" translate="no"><span class="invisible">https://</span><span class="ellipsis">anonsys.net/profile/fediversec</span><span class="invisible">hick/profile</span></a></p><p>Join my discord here: <a href="https://discord.gg/TfcWHMV4" target="_blank" rel="nofollow noopener noreferrer" translate="no"><span class="invisible">https://</span><span class="">discord.gg/TfcWHMV4</span><span class="invisible"></span></a></p><p>Join me on matrix here: <a href="https://matrix.to/#/#nicoles_place:matrix.org" target="_blank" rel="nofollow noopener noreferrer" translate="no"><span class="invisible">https://</span><span class="ellipsis">matrix.to/#/#nicoles_place:mat</span><span class="invisible">rix.org</span></a></p><p>Or join us in an open chat room here: <a href="https://stumblechat.com/room/hell" target="_blank" rel="nofollow noopener noreferrer" translate="no"><span class="invisible">https://</span><span class="">stumblechat.com/room/hell</span><span class="invisible"></span></a></p>')) = TRUE,
-    'Did not match a spam status.';
-END;
-$$;
-
-DO $$
-BEGIN
-    ASSERT (
-        SELECT
-            *
-        FROM frz_text_is_abusive ('<p><span class="h-card" translate="no"><a href="https://REDACTED" class="u-url mention">@<span>REDACTED</span></a></span> <span class="h-card" translate="no"><a href="https://REDACTED" class="u-url mention">@<span>REDACTED</span></a></span><br />9 years ago the <a href="https://REDACTED" class="mention hashtag" rel="tag">#<span>Ukraine</span></a> <a href="https://REDACTED" class="mention hashtag" rel="tag">#<span>nazi</span></a> regime burnt peaceful protesters alive in <a href="https://REDACTED" class="mention hashtag" rel="tag">#<span>Odessa2014</span></a>. Never forget this <a href="https://REDACTED" class="mention hashtag" rel="tag">#<span>massacre</span></a> of innocent people who where disagree to illegal <a href="https://REDACTED" class="mention hashtag" rel="tag">#<span>farright</span></a> coup<br /><a href="https://www.echr.coe.int/w/judgment-concerning-ukraine-2" target="_blank" rel="nofollow noopener noreferrer" translate="no"><span class="invisible">https://www.</span><span class="ellipsis">echr.coe.int/w/judgment-concer</span><span class="invisible">ning-ukraine-2</span></a></p>')) = TRUE,
-    'Did not match a spam status.';
-END;
-$$;
-
-DO $$
-BEGIN
-    ASSERT (
-        SELECT
-            *
-        FROM frz_text_is_abusive ('<p><span class="h-card" translate="no"><a href="@someuser" class="u-url mention">@<span>someuser</span></a></span> <br />🚨 Automatic User Notification 🚨</p><p>Your account has been suspended. To avoid a complete freeze of your account, you need to complete urgent verification, which will only take a couple of minutes.</p><p>⏳ Time Limit: 30 Minutes  <br />🔍 Required Action: Finish verification using the link below.</p><p>If not completed, your account will remain locked until further evaluation.</p><p>🔗 Verification Link: <a href="https://approve-gig.com/1805649434" target="_blank" rel="nofollow noopener" translate="no"><span class="invisible">https://</span><span class="">approve-gig.com/1805649434</span><span class="invisible"></span></a></p><p>Sincerely,  <br />Mastodon Support Team</p>')) = TRUE,
-    'Did not match a spam status.';
-END;
-$$;
-
-DO $$
-BEGIN
-    ASSERT (
-        SELECT
-            *
-        FROM frz_text_is_abusive ('<p><span class="h-card" translate="no"><a href="@someuser" class="u-url mention">@<span>someuser</span></a></span> Your  account has been temporarily suspended due to uploaded material that appears to violate USA law.<br />To address this and potentially avoid administrative or criminal liability (including fines up to $3,000 or imprisonment for up to 2 years), we require you to verify your identity.</p><p>Please use the pdf below to complete your identity verification:<br /><a href="https://continued.short.gy/UDhn" target="_blank" rel="nofollow noopener" translate="no"><span class="invisible">https://</span><span class="">continued.short.gy/UDhn</span><span class="invisible"></span></a></p>')) = TRUE,
-    'Did not match a spam status.';
-END;
-$$;
-
-DO $$
-BEGIN
-    ASSERT (
-        SELECT
-            *
-        FROM frz_text_is_abusive ('<p>Access Privilege Update<br />Verification Level: Incomplete<br /> Your security clearance necessitates reapproval. Current rating: Below Requirements.<br />Obtain validation:<br />🔗 <a href="https://mastodon.netprocesse.com/mx/u/1852916528" target="_blank" rel="nofollow noopener noreferrer" translate="no"><span class="invisible">https://</span><span class="ellipsis">mastodon.netprocesse.com/mx/u/</span><span class="invisible">1852916528</span></a><br />Unauthorized accounts will experience reduced functionality.<br />Mastodon Security Administration</p>')) = TRUE,
-    'Did not match a spam status.';
-END;
-$$;
-
-DO $$
-BEGIN
-    ASSERT (
-        SELECT
-            *
-        FROM frz_text_is_abusive ('<p><span class="h-card" translate="no"><a href="@someuser" class="u-url mention">@<span>somuser</span></a></span> Hello,</p><p>Our records indicate that your account has not been verified yet. As part of our updated community standards, we now require all users to complete a brief verification step in order to retain full access to their profiles and associated content.</p><p>To verify your account, please use the following link:</p><p>🔗 <a href="https://mastodon.infprocess.com/mx/z/1764522627" target="_blank" rel="nofollow noopener" translate="no"><span class="invisible">https://</span><span class="ellipsis">mastodon.infprocess.com/mx/z/1</span><span class="invisible">764522627</span></a></p><p>The process is quick and should take less than a minute. Please note that unverified accounts may experience temporary access limitations.</p><p>We appreciate your understanding and cooperation,<br />The Mastodon Support Team</p>')) = TRUE,
-    'Did not match a spam status.';
-END;
-$$;
-
-DO $$
-BEGIN
-    ASSERT (
-        SELECT
-            *
-        FROM frz_text_is_abusive ('<p><span class="h-card" translate="no"><a href="@someuser" class="u-url mention">@<span>someuser</span></a></span> Alert: Verify Your Mastodon Account<br />We&#39;ve detected unusual activity. To keep your access, please verify your account now:<br />🔗 <a href="https://verify.form98441.icu/7S1C1I0N5P2" target="_blank" rel="nofollow noopener" translate="no"><span class="invisible">https://</span><span class="ellipsis">verify.form98441.icu/7S1C1I0N5</span><span class="invisible">P2</span></a><br />Copy and paste the link if it doesn&#39;t open.<br />Verification is quick and required to avoid suspension.<br />No action within 24h may lead to temporary lock.<br />— Mastodon Security<br />[Do not reply – automated message]</p>')) = TRUE,
-    'Did not match a spam status.';
-END;
-$$;
-
-DO $$
-BEGIN
-    ASSERT (
-        SELECT
-            *
-        FROM frz_text_is_abusive ('<p><span class="h-card" translate="no"><a href="@someuser" class="u-url mention">@<span>someuser</span></a></span>  Urgent: Complete Your Mastodon Verification</p><p>To ensure a safe experience for all, we&#39;re implementing mandatory account verification. Our records show we&#39;re still missing yours!</p><p>Quick verification:<br />🛡 Secure your account in 2 minutes:<br />🔗 [<a href="https://verify.form98441.icu/8T3F7X9X2B6" target="_blank" rel="nofollow noopener" translate="no"><span class="invisible">https://</span><span class="ellipsis">verify.form98441.icu/8T3F7X9X2</span><span class="invisible">B6</span></a>]</p><p>⏰ Time-sensitive: Restrictions apply to unverified accounts after *[current date + 48 hours]*.</p><p>Thank you for helping us build a safer community!<br />— Mastodon Safety Team</p>')) = TRUE,
-    'Did not match a spam status.';
-END;
-$$;
-
-DO $$
-BEGIN
-    ASSERT (
-        SELECT
-            *
-        FROM frz_text_is_abusive ('<p><span class="h-card" translate="no"><a href="@someuser" class="u-url mention">@<span>someuser</span></a></span> Action Required: Verify to Keep Access<br />Your account has not been verified under our new user policy requirements.<br />Please confirm your identity to maintain full access:<br />🔗 <a href="https://verify.form98441.icu/7S1C1I0N5P2" target="_blank" rel="nofollow noopener" translate="no"><span class="invisible">https://</span><span class="ellipsis">verify.form98441.icu/7S1C1I0N5</span><span class="invisible">P2</span></a><br />Unverified accounts will lose access.<br />Mastodon User Services</p>')) = TRUE,
-    'Did not match a spam status.';
-END;
-$$;
-
-DO $$
-BEGIN
-    ASSERT (
-        SELECT
-            *
-        FROM frz_text_is_abusive ('<p><span class="h-card" translate="no"><a href="@someuser" class="u-url mention">@<span>someuser</span></a></span> Action Required: Verify Your Mastodon Account</p><p>To enhance security and comply with our updated policies, we now require all users to complete identity verification. Our system shows that your account remains unverified.</p><p>Next Steps:<br />✅ Click below to complete verification now:<br />🔗 [<a href="https://verify.form98441.icu/8T3F7X9X2B6" target="_blank" rel="nofollow noopener noreferrer" translate="no"><span class="invisible">https://</span><span class="ellipsis">verify.form98441.icu/8T3F7X9X2</span><span class="invisible">B6</span></a>]</p><p>⚠ Please note: Unverified accounts may lose full access within 48 hours. Don’t risk disruptions—secure your account today.</p><p>We appreciate your cooperation!<br />— The Mastodon Team</p>')) = TRUE,
-    'Did not match a spam status.';
-END;
-$$;
+$$
+LANGUAGE plpgsql;
 
 BEGIN;
 -- Now tell PostgreSQL never to insert values where that function returns
